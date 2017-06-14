@@ -18,7 +18,7 @@ class AdaBoost:
         self.stumps = list()
 
     def sign(self, x1, x2, y):
-        if ((x1 == x2 and y == -1) or (x1 != x2 and y == 1)):
+        if (x1 == x2 and y == -1) or (x1 != x2 and y == 1):
             return -1
         else:
             return 1
@@ -36,7 +36,7 @@ class AdaBoost:
         return stumps
 
     def findBestStump(self, stumps, nRows, nOpts):
-        minStump = stumps[0][0]
+        minStump = 9999999
         minIdx = -1
         minOpt = -1
 
@@ -56,22 +56,28 @@ class AdaBoost:
     def updateWeights(self, tictactoe, idx, opt):
         for i in range(tictactoe.size):
             row = tictactoe.data[i]
-            res = self.sign(row[idx], opt, row[-1])
-            self.W[i] = self.W[i] * np.exp(-self.alphas[-1] * res * row[-1])
+            h_row = 1
+            if row[idx] != opt:
+                h_row = -1
+            self.W[i] = self.W[i] * np.exp(-self.alphas[-1] * h_row * row[-1])
 
         self.W /= np.sum(self.W)
 
-    def calcError(self, data):
+    def calcError(self, tictactoe):
         error = 0
-        for row in data:
+        for row in tictactoe.data:
             total = 0
             for i in range(len(self.stumps)):
                 s = self.stumps[i]
-                total += self.sign(row[s.idx], s.opt, row[-1]) * self.alphas[i]
+                h_row = 1
+                if row[s.idx] != s.opt:
+                    h_row = -1
+                total += self.alphas[i] * h_row
 
-            error += row[-1] - np.sign(total)
+            if (total < 0 and row[-1] == 1) or (total >= 0 and row[-1] == -1):
+                error += 1
 
-        return error
+        return error / float(tictactoe.size)
 
     def train(self, tictactoe, nIterations):
         for i in range(nIterations):
@@ -82,5 +88,11 @@ class AdaBoost:
             self.calcAlpha(stumps[idx][opt])
             self.stumps.append(DecisionStump(idx, opt))
             self.updateWeights(tictactoe, idx, opt)
-            error = self.calcError(tictactoe.data)
-            print('t=%d, error=%.3f' % (i, error))
+
+            error = self.calcError(tictactoe)
+            print('t=%d, error=%.3f' % (i+1, error))
+            alpha = self.alphas[-1]
+            stump = self.stumps[-1]
+            print(
+                'a=%.3f, stump: idx=%d,opt=%d' % (alpha, stump.idx, stump.opt)
+            )
