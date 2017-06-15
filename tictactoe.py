@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 from csv import reader
 from random import shuffle
 
