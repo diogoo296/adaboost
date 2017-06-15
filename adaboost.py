@@ -10,7 +10,7 @@ class DecisionStump:
 
 class AdaBoost:
     def __init__(self, ticTacToe):
-        self.W = np.ones(ticTacToe.size) / ticTacToe.size
+        self.W = np.ones(ticTacToe.trainLen) / ticTacToe.trainLen
         self.alphas = list()
         self.choosenRows = [
             np.zeros(ticTacToe.N_OPTS) for i in range(ticTacToe.N_ROWS)
@@ -23,8 +23,8 @@ class AdaBoost:
     def calcStumpsError(self, ticTacToe):
         stumps = [np.zeros(ticTacToe.N_OPTS) for i in range(ticTacToe.N_ROWS)]
 
-        for i in range(ticTacToe.size):
-            row = ticTacToe.data[i]
+        for i in range(ticTacToe.trainLen):
+            row = ticTacToe.trainSet[i]
             for idx in range(ticTacToe.N_ROWS):
                 for opt in range(ticTacToe.N_OPTS):
                     if (not self.isCorrect(opt, row[idx], row[-1])):
@@ -58,8 +58,8 @@ class AdaBoost:
         return 1 if row[stump.idx] == stump.opt else -1
 
     def updateWeights(self, ticTacToe):
-        for i in range(ticTacToe.size):
-            row = ticTacToe.data[i]
+        for i in range(ticTacToe.trainLen):
+            row = ticTacToe.trainSet[i]
             pred = self.predict(self.stumps[-1], row)
             self.W[i] *= np.exp(-self.alphas[-1] * pred * row[-1])
 
@@ -68,9 +68,9 @@ class AdaBoost:
     def sign(self, value):
         return 1 if value >= 0 else -1
 
-    def calcError(self, ticTacToe):
+    def calcError(self, data, dataLen):
         error = 0
-        for row in ticTacToe.data:
+        for row in data:
             total = 0
             for alpha, stump in zip(self.alphas, self.stumps):
                 total += alpha * self.predict(stump, row)
@@ -78,7 +78,7 @@ class AdaBoost:
             if self.sign(total) != row[-1]:
                 error += 1
 
-        return error / float(ticTacToe.size)
+        return error / float(dataLen)
 
     def train(self, ticTacToe, nIterations):
         for i in range(nIterations):
@@ -86,9 +86,10 @@ class AdaBoost:
             self.calcAlpha(minError)
             self.updateWeights(ticTacToe)
 
-            error = self.calcError(ticTacToe)
+            eIn = self.calcError(ticTacToe.trainSet, ticTacToe.trainLen)
+            eOut = self.calcError(ticTacToe.testSet, ticTacToe.testLen)
             alpha = self.alphas[-1]
             stump = self.stumps[-1]
-            print('t=%d, e=%.3f, a=%.3f, stump=(%d|%d)' % (
-                i+1, error, alpha, stump.idx, stump.opt
+            print('t=%d, Ein=%.3f, Eout=%.3f a=%.3f, stump=(%d|%d)' % (
+                i+1, eIn, eOut, alpha, stump.idx, stump.opt
             ))

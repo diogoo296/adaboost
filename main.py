@@ -33,9 +33,12 @@ def main(argv):
         # elif opt == '-o':
         #     outputFile = arg
 
-    tictactoe = TicTacToe(inputFile)
-    adaboost = AdaBoost(tictactoe)
-    adaboost.train(tictactoe, nIterations)
+    ticTacToe = TicTacToe(inputFile)
+    for k in range(ticTacToe.N_FOLDS):
+        ticTacToe.createTrainAndTestSets(k)
+        adaboost = AdaBoost(ticTacToe)
+        adaboost.train(ticTacToe, nIterations)
+        print('--------------------------------------')
 
 if __name__ == "__main__":
     main(sys.argv[1:])
