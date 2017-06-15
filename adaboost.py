@@ -15,6 +15,8 @@ class AdaBoost:
             np.zeros(ticTacToe.N_OPTS) for i in range(ticTacToe.N_ROWS)
         ]
         self.stumps = list()
+        self.Ein = list()
+        self.Eout = list()
 
     def isCorrect(self, choice, realVal, y):
         return (choice == realVal and y == 1) or (choice != realVal and y == -1)
@@ -85,10 +87,14 @@ class AdaBoost:
             self.calcAlpha(minError)
             self.updateWeights(ticTacToe)
 
-            eIn = self.calcError(ticTacToe.trainSet, ticTacToe.trainLen)
-            eOut = self.calcError(ticTacToe.testSet, ticTacToe.testLen)
+            Ein = self.calcError(ticTacToe.trainSet, ticTacToe.trainLen)
+            Eout = self.calcError(ticTacToe.testSet, ticTacToe.testLen)
+            self.Ein.append(Ein)
+            self.Eout.append(Eout)
             alpha = self.alphas[-1]
             stump = self.stumps[-1]
             print('t=%d, Ein=%.3f, Eout=%.3f a=%.3f, stump=(%d|%d)' % (
-                i+1, eIn, eOut, alpha, stump.idx, stump.opt
+                i+1, Ein, Eout, alpha, stump.idx, stump.opt
             ))
+
+        return self.Ein, self.Eout
