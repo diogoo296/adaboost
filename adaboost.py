@@ -9,90 +9,86 @@ class DecisionStump:
 
 
 class AdaBoost:
-    def __init__(self, tictactoe):
-        self.W = np.ones(tictactoe.size) / tictactoe.size
+    def __init__(self, ticTacToe):
+        self.W = np.ones(ticTacToe.size) / ticTacToe.size
         self.alphas = list()
         self.choosenRows = [
-            np.zeros(tictactoe.nOpts) for i in range(tictactoe.rowSize)
+            np.zeros(ticTacToe.N_OPTS) for i in range(ticTacToe.N_ROWS)
         ]
         self.stumps = list()
 
-    def sign(self, x1, x2, y):
-        if (x1 == x2 and y == -1) or (x1 != x2 and y == 1):
-            return -1
-        else:
-            return 1
+    def isCorrect(self, choice, realVal, y):
+        return (choice == realVal and y == 1) or (choice != realVal and y == -1)
 
     def calcStumpsError(self, ticTacToe):
-        stumps = [np.zeros(ticTacToe.nOpts) for i in range(ticTacToe.rowSize)]
+        stumps = [np.zeros(ticTacToe.N_OPTS) for i in range(ticTacToe.N_ROWS)]
 
         for i in range(ticTacToe.size):
             row = ticTacToe.data[i]
-            for idx in range(ticTacToe.rowSize):
-                for opt in range(ticTacToe.nOpts):
-                    if (self.sign(row[idx], opt, row[-1]) == -1):
+            for idx in range(ticTacToe.N_ROWS):
+                for opt in range(ticTacToe.N_OPTS):
+                    if (not self.isCorrect(opt, row[idx], row[-1])):
                         stumps[idx][opt] += self.W[i]
 
         return stumps
 
-    def findBestStump(self, stumps, nRows, nOpts):
-        minStump = 9999999
+    def chooseBestStump(self, ticTacToe):
+        stumpsErrors = self.calcStumpsError(ticTacToe)
+        minError = 10
         minIdx = -1
         minOpt = -1
 
-        for idx in range(nRows):
-            for opt in range(nOpts):
+        for idx in range(ticTacToe.N_ROWS):
+            for opt in range(ticTacToe.N_OPTS):
                 choosen = self.choosenRows[idx][opt]
-                if choosen == 0 and stumps[idx][opt] < minStump:
-                    minStump = stumps[idx][opt]
+                if choosen == 0 and stumpsErrors[idx][opt] < minError:
+                    minError = stumpsErrors[idx][opt]
                     minIdx = idx
                     minOpt = opt
 
-        return minIdx, minOpt
+        self.stumps.append(DecisionStump(minIdx, minOpt))
+        self.choosenRows[minIdx][minOpt] = 1
+
+        return minError
 
     def calcAlpha(self, error):
         self.alphas.append(0.5 * np.log((1 - error) / error))
 
-    def updateWeights(self, tictactoe, idx, opt):
-        for i in range(tictactoe.size):
-            row = tictactoe.data[i]
-            h_row = 1
-            if row[idx] != opt:
-                h_row = -1
-            self.W[i] = self.W[i] * np.exp(-self.alphas[-1] * h_row * row[-1])
+    def predict(self, stump, row):
+        return 1 if row[stump.idx] == stump.opt else -1
+
+    def updateWeights(self, ticTacToe):
+        for i in range(ticTacToe.size):
+            row = ticTacToe.data[i]
+            pred = self.predict(self.stumps[-1], row)
+            self.W[i] *= np.exp(-self.alphas[-1] * pred * row[-1])
 
         self.W /= np.sum(self.W)
 
-    def calcError(self, tictactoe):
-        error = 0
-        for row in tictactoe.data:
-            total = 0
-            for i in range(len(self.stumps)):
-                s = self.stumps[i]
-                h_row = 1
-                if row[s.idx] != s.opt:
-                    h_row = -1
-                total += self.alphas[i] * h_row
+    def sign(self, value):
+        return 1 if value >= 0 else -1
 
-            if (total < 0 and row[-1] == 1) or (total >= 0 and row[-1] == -1):
+    def calcError(self, ticTacToe):
+        error = 0
+        for row in ticTacToe.data:
+            total = 0
+            for alpha, stump in zip(self.alphas, self.stumps):
+                total += alpha * self.predict(stump, row)
+
+            if self.sign(total) != row[-1]:
                 error += 1
 
-        return error / float(tictactoe.size)
+        return error / float(ticTacToe.size)
 
-    def train(self, tictactoe, nIterations):
+    def train(self, ticTacToe, nIterations):
         for i in range(nIterations):
-            stumps = self.calcStumpsError(tictactoe)
-            rowSize = tictactoe.rowSize
-            idx, opt = self.findBestStump(stumps, rowSize, tictactoe.nOpts)
-            self.choosenRows[idx][opt] = 1
-            self.calcAlpha(stumps[idx][opt])
-            self.stumps.append(DecisionStump(idx, opt))
-            self.updateWeights(tictactoe, idx, opt)
+            minError = self.chooseBestStump(ticTacToe)
+            self.calcAlpha(minError)
+            self.updateWeights(ticTacToe)
 
-            error = self.calcError(tictactoe)
-            print('t=%d, error=%.3f' % (i+1, error))
+            error = self.calcError(ticTacToe)
             alpha = self.alphas[-1]
             stump = self.stumps[-1]
-            print(
-                'a=%.3f, stump: idx=%d,opt=%d' % (alpha, stump.idx, stump.opt)
-            )
+            print('t=%d, e=%.3f, a=%.3f, stump=(%d|%d)' % (
+                i+1, error, alpha, stump.idx, stump.opt
+            ))
