@@ -39,3 +39,5 @@ The original dataset (`data.csv`) was formated using the commands listed below i
 As shown by the image below, the test error - E(out) - follows the training error - E(in) - by decreasing when the second one goes down and by increasing when the training error goes up, as it should be expected in a AdaBoost algorithm.
 
 ![Results](results.png)
+
+The average accuracy was about **76.4%**.
