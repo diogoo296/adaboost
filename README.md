@@ -18,7 +18,7 @@ The `main.py` file accepts the following command line arguments:
 * **-o:** output file (errors line plot).
 * **-h:** shows possible command line arguments.
 
-Example of excecution command:
+Example of execution command:
 ```
 ./main.py -t 27 -i data_formated.csv -o errors.out
 ```
@@ -26,7 +26,7 @@ Example of excecution command:
 ## Dataset
 This implementation was adapted to classify TicTacToe games from the dataset downloaded at the [UC Irvine Machine Learning Repository](https://archive.ics.uci.edu/ml/datasets/Tic-Tac-Toe+Endgame). This data is composed by 958 instances where *x* is assumed to have played first and where the class - *positive* or *negative* - represents if the *x* player won or lose, respectively.
 
-The original dataset (`data.csv`) was formated using the commands listed below in the text editor [Vim](http://www.vim.org/), resulting in the file `data_formated.csv`:
+The original dataset (`data.csv`) was formatted using the commands listed below in the text editor [Vim](http://www.vim.org/), resulting in the file `data_formated.csv`:
 ```
 :%s/positive/1/g
 :%s/negative/-1/g
